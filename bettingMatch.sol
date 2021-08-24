@@ -1,4 +1,8 @@
 /**
+ *Submitted for verification at BscScan.com on 2021-08-24
+*/
+
+/**
  *Submitted for verification at BscScan.com on 2021-08-23
 */
 
@@ -65,6 +69,12 @@ contract Betting is Ownable {
       uint16 matchSelected;
       uint16 resultSelected;
    }
+   
+   struct matchBet {
+      uint16 matchSelected;
+      uint16 resultSelected;
+   }
+   mapping(uint16 => bool) matchBettingActive;
 
    mapping(address => Player) public playerInfo;
 
@@ -87,6 +97,17 @@ contract Betting is Ownable {
       }
       return false;
    }
+    function checkMatchStatus(uint16 _match) public view returns(bool){
+    
+    if(matchBettingActive[_match] == true){
+        return true;
+    }
+    else{
+        return false;
+    }
+    
+   }
+   
 
    function initializeMatches(uint8 _numberMatches) public onlyOwner{
       for(uint256 i = 0; i < _numberMatches; i++){
@@ -95,8 +116,20 @@ contract Betting is Ownable {
          totalBetDraw[i] = 0;
       }
    }
+   
+   function beginVotingPeriodForMatch(uint16 _match)  public onlyOwner returns(bool) {
+    matchBettingActive[_match] = true;
+    return true;
+  }
+  
+   function closeVotingForMatch(uint16 _match) public onlyOwner returns (bool) {
+    // Close the betting period
+    matchBettingActive[_match] = false;
+    return true;
+  }
 
    function bet(uint16 _matchSelected, uint16 _resultSelected) public payable {
+       require(matchBettingActive[_matchSelected] == true, "Betting: match voting is disabled");
       //Check if the player already exist
     //   require(!checkIfPlayerExists(msg.sender));
     
@@ -199,4 +232,4 @@ contract Betting is Ownable {
     function AmountDraw(uint16 _matchSelected) public view returns(uint256){
        return totalBetDraw[_matchSelected];
     }
-}
+} 
