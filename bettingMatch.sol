@@ -1,5 +1,4 @@
 
-
 pragma solidity ^0.4.2;
 
 /**
@@ -58,15 +57,21 @@ contract Betting is Ownable {
 
    address public owner;
    
+   
+   
+   struct Bet {
+      uint256 amountBet;
+      uint16 matchSelected;
+      uint16 resultSelected;
+    //   address[] players;
+   }
+   
    struct Player {
       uint256 amountBet;
       uint16 matchSelected;
       uint16 resultSelected;
-   }
-   
-   struct matchBet {
-      uint16 matchSelected;
-      uint16 resultSelected;
+      uint numFunders;
+      mapping (uint => Bet) Bets;
    }
    mapping(uint16 => bool) matchBettingActive;
 
@@ -85,23 +90,65 @@ contract Betting is Ownable {
       if(msg.sender == owner) selfdestruct(owner);
     }
 
-   function checkIfPlayerExists(address player) public view returns(bool){
-      for(uint256 i = 0; i < players.length; i++){
-         if(players[i] == player) return true;
-      }
-      return false;
-   }
-    function checkMatchStatus(uint16 _match) public view returns(bool){
+   function checkIfPlayerExists(address player,uint16 matchSelect) public view returns(bool){
+    //   for(uint256 i = 0; i < players.length; i++){
+    //      if(players[i] == player ) return true;
+    //   }
+    //   return false;
     
-    if(matchBettingActive[_match] == true){
+    if(playerInfo[player].matchSelected == matchSelect){
         return true;
-    }
-    else{
+   }
+    else {
         return false;
     }
-    
+      
    }
    
+//   function updateUser(address _address, uint256 memory betAmount, uint16 memory selectedMatch, uint16 memory selectedResult, uint memory FundersNum) public onlyOwner {
+//         playerInfo[_address] = Player(betAmount, selectedMatch, selectedResult, FundersNum);
+//     }
+
+//      function getPlayer(address account) public view returns (uint256 memory betAmount, uint16 memory selectedMatch, uint16 memory selectedResult, uint memory FundersNum){
+//   return (playerInfo[account].betAmount, playerInfo[account].selectedMatch, playerInfo[account].selectedResult, playerInfo[account].FundersNum);
+// }
+   
+//   function currentValue(address userAddress) public view{
+//       if(playerInfo[userAddress].numFunders > 0){
+//     // this means that the slot with the anAddress is populated. 
+//     // you can get the data the same way too.
+//     uint256 amountBet = playerInfo[userAddress].amountBet;
+
+//     uint16 matchSelected = playerInfo[userAddress].matchSelected;
+    
+//     uint16 resultSelected = playerInfo[userAddress].resultSelected;
+
+//     }
+//   }
+  
+  function getCurrentPlayerInfo(address account) public view returns (uint256, uint16, uint16, uint){
+  return (playerInfo[account].amountBet, playerInfo[account].matchSelected, playerInfo[account].resultSelected, playerInfo[account].numFunders);
+}
+
+function getPlayerMatchInfo(address account, uint16 _matchSelected) public view returns (uint256, uint16, uint16, uint){
+    return (playerInfo[account].amountBet, playerInfo[account].matchSelected, playerInfo[account].resultSelected, playerInfo[account].numFunders);
+
+}
+    
+   
+//     function getPlayerToken(address tokenId, uint _player) public returns(uint, uint) {
+//       Player storage t =  playerInfo[tokenId];
+//       return (t.matchSelected, t.Bets[_player]);
+//   }
+   
+//   function personFriendCount(address person) constant returns(uint count) {
+//     return playerInfo[person].players.length;
+// }
+
+//     function personFriendAtIndex(address person, uint index) constant returns(address friendAddress) {
+//     return playerInfo[person].players[index];
+// }
+
 
    function initializeMatches(uint8 _numberMatches) public onlyOwner{
       for(uint256 i = 0; i < _numberMatches; i++){
@@ -123,9 +170,12 @@ contract Betting is Ownable {
   }
 
    function bet(uint16 _matchSelected, uint16 _resultSelected) public payable {
-       require(matchBettingActive[_matchSelected] == true, "Betting: match voting is disabled");
+      
+      Player storage c = playerInfo[_matchSelected];
+      
+      require(matchBettingActive[_matchSelected], "Betting: match voting is disabled");
       //Check if the player already exist
-    //   require(!checkIfPlayerExists(msg.sender));
+      require(!checkIfPlayerExists(msg.sender, _matchSelected));
     
       //Check if the value sended by the player is higher than the min value
       require(msg.value >= minimumBet);
@@ -134,6 +184,7 @@ contract Betting is Ownable {
       playerInfo[msg.sender].amountBet = msg.value;
       playerInfo[msg.sender].matchSelected = _matchSelected;
       playerInfo[msg.sender].resultSelected = _resultSelected;
+      c.Bets[c.numFunders++] = Bet({ amountBet:msg.value,matchSelected: _matchSelected,resultSelected: _resultSelected});
       
       //Add the address of the player to the players array
       players.push(msg.sender);
@@ -226,4 +277,4 @@ contract Betting is Ownable {
     function AmountDraw(uint16 _matchSelected) public view returns(uint256){
        return totalBetDraw[_matchSelected];
     }
-} 
+}
